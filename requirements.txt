@@ -1,2 +1,2 @@
+pytube
 Flask
-yt-dlp
