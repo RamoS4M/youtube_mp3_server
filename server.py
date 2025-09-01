@@ -1,31 +1,27 @@
 from flask import Flask, request, send_file
-import yt_dlp
+from pytube import YouTube
+import os
 
 app = Flask(__name__)
 
-@app.route("/download", methods=["POST"])
+@app.route('/download', methods=['GET'])
 def download():
-    url = request.form.get("url")
-    if not url:
-        return "No URL provided", 400
+    video_url = request.args.get('url')
+    if not video_url:
+        return "No se proporcionó URL", 400
 
-    filename = "/tmp/audio.mp3"  # carpeta temporal de Heroku
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': filename,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
+    print("URL recibida:", video_url)
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        yt = YouTube(video_url)
+        stream = yt.streams.filter(only_audio=True).first()
+        filename = "/tmp/audio.mp3"
+        stream.download(output_path="/tmp", filename="audio.mp3")
+        print("Archivo descargado:", filename)
         return send_file(filename, as_attachment=True)
     except Exception as e:
-        return str(e), 500
+        print("Error:", e)
+        return f"Error al descargar: {e}", 500
 
 if __name__ == "__main__":
     app.run()
